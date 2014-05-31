@@ -1,0 +1,13 @@
+Updating your code base (assuming you have no local changes)
+------------------------------------------------------------
+//in the master branch of your local git repo
+  git pull
+
+
+
+After making changes
+----------------------
+git add -A
+git commit -m "your commit message"
+git push origin master
+
