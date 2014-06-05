@@ -9,7 +9,7 @@
 
 #include "motor.h"
 #include "servo.h"
-#include "simplei2c.h"
+#include "io_pins.h"
 
 // Stack space for Speed Control cog
 unsigned int stack[(160 + (50 * 4))];
@@ -24,15 +24,10 @@ float des_bias_clicks   = 0.0;          // Desired bias, clicks/interval
 int   des_dist_clicks   = 0;            // Desired distance in encoder clicks. Zero = ignore.
 int   dist_clicks       = 0;            // Cumulative distance traveled in clicks
 float mPower[2]         = {0.0, 0.0};   // Power(speed) command to servos
-int   mSign[2]          = {1, 1};       // Sign of rotation of motor
-int   mPin[2]           = {16, 17};     // Motor servo pins Left & Right
-int   mEnc[2]           = {4, 5};       // Motor encoder pins Left & Right
 float integral          = 0.0;          // Integral of velocity difference
-float k_integral        = 0.6;          // Integral error gain
-float k_pro             = 1.0;          // Proportional gain
-float k_clicks          = 6.0 / 100.0;  // Clicks per interval based on 100% duty factor
-float k_degclicks       = 0.17;           // Number of encoder clicks per degree of rotation
-int debug_cnt = 0;
+int   mSign[2]          = {1, 1};       // Sign of rotation of motor
+int   mPin[2]           = {LT_WHEEL, RT_WHEEL};   // Motor servo pins Left & Right
+int   mEnc[2]           = {LENC_PIN, RENC_PIN};   // Motor encoder pins Left & Right
 
 /* Limit range of value */
 float limit_range(float val, float low, float high)
@@ -104,11 +99,11 @@ void speed_control(void *par)
                                                             // Turn if Bias provided
         left_vel = get_velClicks(LEFT);                     // Get current left velocity (in clicks)
         right_vel = get_velClicks(RIGHT);                   // Get current right velocity (in clicks)
-        integral_error = k_integral *                       // Integrate Left & Right velocity
+        integral_error = INTEGRAL *                       // Integrate Left & Right velocity
           integrate(left_vel, right_vel, des_bias_clicks);  //  also introduce possible bias.
-        left_error = k_pro *
+        left_error = PRO_GAIN *
           (des_vel_clicks - left_vel - integral_error);     // Proportional speed adjustment of left servo
-        right_error = k_pro *
+        right_error = PRO_GAIN *
           (des_vel_clicks - right_vel + integral_error);    // Proportional speed adjustment of right servo
           alter_power(left_error, 0);                       // Alter servo speeds as necessary
           alter_power(right_error, 1);
@@ -194,8 +189,8 @@ void init_encoders(void)
 // Set a motion velocity and provide a turning bias if desired
 void move(float vel, float bias)
 {
-  des_vel_clicks = k_clicks * abs(vel);     // Percentage velocity expressed in clicks
-  des_bias_clicks = k_clicks * bias;
+  des_vel_clicks = INT_CLICKS * abs(vel);     // Percentage velocity expressed in clicks
+  des_bias_clicks = INT_CLICKS * bias;
   mSign[LEFT] = get_sign(vel - bias);
   mSign[RIGHT] = get_sign(vel + bias);
   mFunc = MOVE;
@@ -208,14 +203,14 @@ void adj_bias(int l_dist, int r_dist)
 
   if (l_dist <= 12) bias = (10 - l_dist) * -2.0;
   if (r_dist <= 12) bias = (10 - r_dist) * 2.0;
-  des_bias_clicks = k_clicks * bias;
+  des_bias_clicks = INT_CLICKS * bias;
 }
 
 // Rotate Left/Right a particular number of degrees
 void  rotate(int dir, int deg)
 {
   des_dir = dir;
-  turn_count = k_degclicks * deg;
+  turn_count = DEG_CLICKS * deg;
   mFunc = ROTATE;
 }
 
@@ -231,12 +226,3 @@ int stop(void)
   mFunc = STOP;
 }
 
-int get_debug_cnt(void)
-{
-  return(debug_cnt);
-}
-
-int get_turn_cnt(void)
-{
-  return(turn_count);
-}

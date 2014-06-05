@@ -1,6 +1,7 @@
 libmotor2.cpp
 motor.cpp
 motor.h
+io_pins.h
 >compiler=C++
 >memtype=cmm main ram compact
 >optimize=-Os
