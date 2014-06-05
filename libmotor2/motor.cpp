@@ -49,15 +49,15 @@ void pwm_motor(float vel, int motor_index)
 {
   if (motor_index == 0) {
     if (mSign[motor_index] > 0) {
-      servo_speed(mPin[motor_index], (int) -vel);     // Set left servo speed forward
+      servo_speed(mPin[motor_index], (int) vel);     // Set left servo speed forward
     } else {
-      servo_speed(mPin[motor_index], (int) vel);      // Set left servo speed reverse
+      servo_speed(mPin[motor_index], (int) -vel);      // Set left servo speed reverse
     }
   } else {
     if (mSign[motor_index] > 0) {
-      servo_speed(mPin[motor_index], (int) vel);      // Set right servo speed forward
+      servo_speed(mPin[motor_index], (int) -vel);      // Set right servo speed forward
     } else {
-      servo_speed(mPin[motor_index], (int) -vel);     // Set right servo speed reverse
+      servo_speed(mPin[motor_index], (int) vel);     // Set right servo speed reverse
     }
   }
 }
@@ -99,7 +99,7 @@ void speed_control(void *par)
                                                             // Turn if Bias provided
         left_vel = get_velClicks(LEFT);                     // Get current left velocity (in clicks)
         right_vel = get_velClicks(RIGHT);                   // Get current right velocity (in clicks)
-        integral_error = INTEGRAL *                       // Integrate Left & Right velocity
+        integral_error = INTEGRAL *                         // Integrate Left & Right velocity
           integrate(left_vel, right_vel, des_bias_clicks);  //  also introduce possible bias.
         left_error = PRO_GAIN *
           (des_vel_clicks - left_vel - integral_error);     // Proportional speed adjustment of left servo
@@ -116,8 +116,8 @@ void speed_control(void *par)
 
         if (des_dir == LEFT)                                // Rotate Left
         {
-          servo_speed(mPin[LEFT], -50);
-          servo_speed(mPin[RIGHT], -50);
+          servo_speed(mPin[LEFT], -100);
+          servo_speed(mPin[RIGHT], -100);
           while (cnt < turn_count)
           {
             cnt = PHSA;
@@ -130,8 +130,8 @@ void speed_control(void *par)
         }
         else if (des_dir == RIGHT)                          // Rotate Right
         {
-          servo_speed(mPin[LEFT], 50);
-          servo_speed(mPin[RIGHT], 50);
+          servo_speed(mPin[LEFT], 100);
+          servo_speed(mPin[RIGHT], 100);
           while (cnt < turn_count)
           {
             cnt = PHSA;

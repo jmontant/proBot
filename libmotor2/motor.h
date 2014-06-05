@@ -18,7 +18,7 @@
 #define INTEGRAL    0.6                   // Integral error gain
 #define PRO_GAIN    1.0                   // Proportional gain
 #define INT_CLICKS  0.06                  // Clicks per interval based on 100% duty factor
-#define DEG_CLICKS  0.17                  // Number of encoder clicks per degree of rotation
+#define DEG_CLICKS  0.18                  // Number of encoder clicks per degree of rotation
 
 
 float limit_range(float val, float low, float high);
