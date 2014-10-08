@@ -1,0 +1,13 @@
+libpimtor.cpp
+pimotor.cpp
+pimotor.h
+io_pins.h -> ../../../../io_pins.h
+robot_defs.h -> ../../../../robot_defs.h
+>compiler=C++
+>memtype=cmm main ram compact
+>optimize=-Os
+>-m32bit-doubles
+>-fno-exceptions
+>-fno-rtti
+>-ltiny
+>BOARD::ACTIVITYBOARD
