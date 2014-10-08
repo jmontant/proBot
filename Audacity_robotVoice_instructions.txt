@@ -1,0 +1,8 @@
+1) Select the whole audio file. Use CTRL+A (hold down control and press the "A" key)
+2) Click on "Effect" in the menu bar, and select "Change Pitch..."
+3) Change the pitch -14%, and click OK.
+4) In the Effect menu, choose "Echo"
+5) Change "Delay time" to .015 and "Decay Factor" to .65. Click OK.
+6) Again in the Effect menu, choose "Change Tempo..."
+7) Decrease the tempo by 10% (-10.000) and click OK
+8) Repeat steps 4 and 5

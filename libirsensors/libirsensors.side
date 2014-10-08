@@ -1,0 +1,13 @@
+libirsensors.cpp
+io_pins.h -> ../../../../io_pins.h
+irsensors.cpp
+irsensors.h
+>compiler=C++
+>memtype=cmm main ram compact
+>optimize=-Os
+>-m32bit-doubles
+>-Wall
+>-fno-exceptions
+>-fno-rtti
+>-create_library
+>BOARD::GENERIC

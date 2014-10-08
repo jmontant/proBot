@@ -1,0 +1,12 @@
+libxbee.cpp
+xbee.cpp
+xbee.h
+io_pins.h -> ../../../../io_pins.h
+>compiler=C++
+>memtype=cmm main ram compact
+>optimize=-Os
+>-m32bit-doubles
+>-Wall
+>-fno-exceptions
+>-fno-rtti
+>BOARD::GENERIC
