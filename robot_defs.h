@@ -94,12 +94,13 @@ extern "C" {
 #define DA_RIGHT_PIN  27				// DAC 1 (Right Stereo) & LED
 #define EE_SCL_PIN	  28				// EEPROM Serial Clock
 #define EE_SDA_PIN	  29				// EEPROM Serial Data
-#define	SR_RX_PIN	  30				// Serial Receive data
-#define SR_TX_PIN	  31				// Serial Transmit data
+#define	USB_RX_PIN	  30				// Serial Receive data
+#define USB_TX_PIN	  31				// Serial Transmit data
 
 //#define PIR_PIN                       // Passive IR (PIR) sensor
 //#define LCD_PIN                       // LCD display data pin
-
+//#define XBEE_DI_PIN					// Xbee Data Input pin
+//#define XBEE_DO_PIN					// Xbee Data Output pin
 
 /**
  * @brief Propeller EEPROM data storage definitions.
