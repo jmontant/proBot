@@ -1,18 +1,13 @@
 /**
- * @file compass3d.h
+ * @file mycompass.h
  *
- * @author Andy Lindsay
+ * @author Paul Bammel
  *
- * @version v0.85
- *
- * @copyright
- * Copyright (C) Parallax, Inc. 2013. All Rights MIT Licensed.
+ * @version v2.00
  *
  * @brief This library provides convenience 
  * functions for reading measurements from the Parallax Compass Module
  * 3-Axis HMC5883L.
- * @n @n <b><i>CONSTRUCTION ZONE:</i></b> This library is preliminary, major revisions 
- * pending. 
  */
 
 #ifndef COMPASS3D_H
@@ -22,31 +17,17 @@
 extern "C" {
 #endif
 
-#include "simplei2c.h"
-#include "simpletools.h"
 
-#define MODE_SNGL	0x01
-#define	MODE_CONT	0x00
+#define MODE_SNGL	  0x01
+#define	 MODE_CONT  0x00
 
 /**
  * @brief Initialize the Compass
  *
- * @details This function initializes the compass, but
- * before calling it, you have to set up an I2C bus.  
- * Example: Assuming that your program is using the 
- * simpletools library, you can use:
- *
- *   @code
- *   i2c mybus = i2c_init(sclPin, sdaPin)
- *   @endcode
- *
- * ... where sclPin is the number of the I/O pin
- * connected to the compass module's SCL line and sdaPin
- * is the number of the pin connected to the module's
- * SDA line. 
- *
- * @param I2C bus pointer.  In the example above, the pointer
- * is mybus.  
+ * @details This function will initialize an I2C bus
+ * to communicate with the compass module and then
+ * initalize the compass module itself into the read
+ * mode (single/continuous)specified by the caller.  
  *
  * @returns void, but it will display an error message if the
  * compass module does not respond. 
@@ -56,12 +37,9 @@ void compass_init(unsigned char cMode);
 /**
  * @brief Read values from compass.
  *
- * @details This function finds a compass on the specified
- * bus, reads its x, y, and z values and loads them into
- * variables that are passed by address.
- *
- * @param *bus A pointer to the I2C bus (mybus in the 
- * example above).
+ * @details This function reads the raw x, y, and z
+ * values and loads them into variables that are
+ * passed by address.
  *
  * @param *px A pointer to a variable to receive the 
  * x-value measurement.
@@ -76,9 +54,16 @@ void compass_init(unsigned char cMode);
  * compass module does not respond. 
  */
 void compass_read(int *px, int *py, int *pz);
-void compass_cal(int calx, int caly);
+
+void compass_setCal(int calx, int caly);
+
 int compass_smplHeading();
-int compass_diff(int curHead, int newHead);
+
+int compass_diff(int curHead, int desHead);
+
+int compass_calibrate(void);
+
+int compCalc(int max, int min);
 
 #if defined(__cplusplus)
 }
