@@ -11,12 +11,9 @@
 #include "simpletools.h"
 #include "servo.h"
 #include "mycompass.h"
-#include "io_pins.h"
 #include "robot_defs.h"
 #include "pimotor.h"
 
-#define TRUE  1
-#define FALSE 0
 
 // Stack space for Speed Control cog
 unsigned int stack[(160 + (50 * 4))];
@@ -90,11 +87,10 @@ void speed_control(void *par)
   float integral_error = 0.0, left_error = 0.0, right_error = 0.0;
   int left_vel = 0, right_vel = 0, angleDiff = 0;
 
-  serial *term = serial_open(31, 30, 0, 115200);
+  serial *term = serial_open(SR_TX_PIN, SR_RX_PIN, 0, 115200);
 
   init_encoders();                                              // Set up wheel encoders.
   compass_init(0);                                              // Initialize compass on bus.
-  compass_cal(-47, 114);                                        // Compass x & y Calibration values.
 
   while(1)
   {
@@ -123,13 +119,16 @@ void speed_control(void *par)
       case RIGHT:                                               //  Right desired number of degrees.
         cur_heading = compass_smplHeading();                    // Get current heading from compass
         angleDiff = compass_diff(cur_heading, des_heading);     // Diff between cur & Desired heading
+        dprint(term, "dir = %d, cur_heading = %d, des_heading = %d\n", mFunc, cur_heading, des_heading);
         if (angleDiff > 0 && mFunc == LEFT)                     // Rotate Left desired number of degrees.
         {
           while (angleDiff > 0)                                 // While current heading is greater than desired.
           {
-            servo_set(WHEEL_L_PIN, 1500-angleDiff);             // Rotate Left wheel, speed proportional to angle
-            servo_set(WHEEL_R_PIN, 1500-angleDiff);             // Rotate Right wheel, speed proportional to angle
+//            dprint(term, "Left Turn: dir = %d, cur_heading = %d, des_heading = %d\n", mFunc, cur_heading, des_heading);
+            servo_set(WHEEL_L_PIN, 1500-10);             // Rotate Left wheel, speed proportional to angle
+            servo_set(WHEEL_R_PIN, 1500-10);             // Rotate Right wheel, speed proportional to angle
             pause(10);                                          // Make sure there is at least 10ms between compass readings.
+            cur_heading = compass_smplHeading();                    // Get current heading from compass
             angleDiff = compass_diff(cur_heading, des_heading); // Diff between Current & Desired heading
           }
         }
@@ -137,9 +136,11 @@ void speed_control(void *par)
         {
           while (angleDiff < 0)                                 // While current heading is less than desired.
           {
-            servo_set(WHEEL_L_PIN, 1500+angleDiff);             // Rotate Left wheel, speed proportional to angle
-            servo_set(WHEEL_R_PIN, 1500+angleDiff);             // Rotate Right wheel, speed proportional to angle
+//            dprint(term, "Right: dir = %d, cur_heading = %d, des_heading = %d\n", mFunc, cur_heading, des_heading);
+            servo_set(WHEEL_L_PIN, 1500+10);             // Rotate Left wheel, speed proportional to angle
+            servo_set(WHEEL_R_PIN, 1500+10);             // Rotate Right wheel, speed proportional to angle
             pause(10);                                          // Make sure there is at least 10ms between compass readings.
+            cur_heading = compass_smplHeading();                    // Get current heading from compass
             angleDiff = compass_diff(cur_heading, des_heading); // Diff between Current & Desired heading
           }
         }

@@ -4,8 +4,6 @@
 */
 
 
-/* Motor function commands */
-#define ROTATE  2
 
 /* Motor function constants */
 #define INTEGRAL    0.8                           // Integral error gain
