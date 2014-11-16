@@ -12,6 +12,7 @@ Updating your code base (assuming you have no local changes)
 
 After making changes
 ----------------------
+cd probot
 git add -A
 git commit -m "your commit message"
 git push origin master
