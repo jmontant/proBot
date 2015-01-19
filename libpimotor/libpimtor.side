@@ -1,8 +1,8 @@
 libpimtor.cpp
 pimotor.cpp
 pimotor.h
-io_pins.h -> ../../../../io_pins.h
 robot_defs.h -> ../../../../robot_defs.h
+-L ./../libemic
 >compiler=C++
 >memtype=cmm main ram compact
 >optimize=-Os

@@ -1,0 +1,296 @@
+howdy 
+
+Enjoyed the meeting last Saturday, lots of robots!
+
+Clay asked about the PID (Proportional-Integral-Derivative) motor control
+algorithm running on the robot that I brought to the January DPRG meeting.
+This version is all in HC6811 assembly, which is probably not so useful,
+so I went back to see if I could find find the C code from a previous version,
+a few robots ago...  no such luck.  The following is partly reconstructed.
+
+There are three parts to the motor control subsystem:
+	
+	1) The shaft_encoders attached to the drive motors, which collect
+	   the counts that form the feedback loop to the PID software.
+
+	2) The linear pulse-width-modulation code that the PID function 
+	   calls for it's output, which controls the RMS voltage and hence
+	   the speed of the motors.
+
+	3) The PID controller algorithm itself.
+
+/* ------------------------------------------------------------------- */
+
+Shaft encoders 
+
+The shaft encoders generate interrupts which increment a separate 16 bit
+counter for each wheel, in variables called "left_count" and "right_count."
+Here is the interrupt for the left encoder, running on the HC6811 Timer Input
+Compare 3 interrupt, in Motorola assembly:
+
+
+variable_left_count:	FDB 0		/* reserve 2 bytes for variable */
+
+left_interrupt:				/* interrupt entry */
+        LDX     variable_left_count     /* bump 16bit encoder count */
+        INX
+        STX     variable_left_count
+
+        LDX     #BASE			/* address of HC6811 registers */
+        BCLR    TFLG1,X %11111110       /* reset TIC3 interrupt */
+        RTI				/* return from interrupt */
+
+
+
+The variables left_count and right_count are read and zeroed by another
+routine running 20 times a second, which is the sensor loop and update
+rate for this robot.  This routine copies the accumulated counts from
+left_count and right_count to the variables, "left_velocity" and "right_
+velocity" and then resets left_count and right_count to zero.  That code
+looks something like this:
+
+void speedometer()		/* run this at 20 hz in the sensor loop */
+{
+	left_velocity = left_count * left_sign;
+	left_count =0;
+
+	right_velocity = right_count * right_sign;
+	right_count = 0;
+}
+
+The left_sign and right_sign variables represent the direction of rotation
+of the motors (1 for forward and -1 for backwards).  With more expensive
+quadrature shaft encoders this information is read directly from the 
+encoders.  In this implementation I have only simple encoders so the
+direction of rotation is taken from the sign of the most recent command 
+issued by the PID to the pulse-width-modulation code.
+
+/* ------------------------------------------------------------------- */
+
+Pulse-width-modulation (PWM) code
+
+The PWM code drives the hardware H-bridges which actually control the motors.
+There are two routines, "pwmL" for the left motor and "pwmR" for the right.
+These routines take a signed value, -100 < VALUE < 100, set the left_sign
+and right_sign variables used by the speedometer code, set the forward/
+reverse bits on the H-bridges, and use abs(VALUE) as an index into a 100
+entry table of linear PWM values.  The PWM function itself uses two HC6811
+timer interrupts to generate a pair of 120hz variable-pulse-width outputs.
+
+
+/* ------------------------------------------------------------------- */
+
+PID controller
+
+The basic behavior of the speed controller routine is to generate an
+error signal based on the difference between the measured velocity and
+the requested velocity for each wheel.  This error signal is used to
+increase or decrease the speed of the motors to force the measured to
+equal the requested velocity.  
+
+{
+	error  = K_PRO * (requested_velocity - measured_velocity);
+	motor_output = motor_output + error;
+}
+
+The inputs to the PID controller are the requested velocities "Lvel," 
+and "Rvel," which are input velocities expressed as encoder ticks
+per 1/20 second.  The proportional constant K_PRO scales the error
+and controls the Q of the feedback loop.  The larger this value, the
+faster the response of the controller algorithm and more aggressive the
+behavior of the 'bot.  However, the function tends to overshoot the desired
+speed and hunt around zero, never settling down .  The smaller the value
+of K_PRO, the smoother and more accurate the response of the system, but
+now it's slow and somewhat lumbering.
+
+The PID controller solution to this behavior is to introduce a second
+term, the derivative (slope) of the function, as scaled by a second
+constant, K_DRV.  Usually the derivative is approximated by simply
+differencing the current proportional error with the previous one, so only
+a history of the last error signal must be maintained.  This difference will
+be large when the amount of change requested by the PID controller is large,
+and small as the signal approaches zero.  The I in PID is for a third term,
+the integral, used for additional smoothing of the response.  I'm currently
+not using it, so this is really a PD controller.
+
+/* ------------------------------------------------------------------- */
+
+#define K_PRO 3		/* proportional constant */
+#define K_DRV 3		/* derivative constant */
+#define TMAX 100*256	/* maximum output value */
+
+int Lvel, Rvel;		/* requested input velocities, ticks per 1/20 sec */
+int leftacc, rightacc;	/* accumulators for motor output values */
+int leftlast, rightlast; /* history values for calculating derivative */
+
+void speedcontrol()	/* PID controller. Run this at 20hz in sensor loop */
+{
+	int lf, rt;
+
+	lf = (Lvel - left_velocity)*256; 
+	leftacc +=  ((lf/K_PRO) + ((lf - leftlast)/K_DRV));
+	leftlast = lf; 
+	
+	if (leftacc > TMAX) leftacc = TMAX; 
+	else if (leftacc < -TMAX) leftacc = -TMAX; 
+
+	rt = (Rvel - right_velocity)*256; 
+	rightacc += ((rt/K_PRO) + ((rt - rightlast)/K_DRV)); 
+	rightlast = rt; 
+	
+	if (rightacc > TMAX) rightacc = TMAX; 
+	else if (rightacc < -TMAX) rightacc = -TMAX; 
+
+	pwmR(rightacc/256); 
+	pwmL(leftacc/256); 
+}
+
+
+Notes: 	1. This is all in fixed point integer, hence the *256 in the first 
+	few steps and the /256 in the last few.
+
+	2. The accumulators leftacc and rightacc must be clipped at some
+	maximum positive and negative value to keep from overflowing the
+	fixed point arithmetic.
+
+	3. The pulse-width-modulation values are never set explicitly by
+	the user.  Rather, the PID algorithm slews these values up and
+	down at a rate set by K_PRO and K_DRV to equal requested velocities.
+	The user (or user code) sets the Lvel and Rvel values and allows
+	the PID controller to set the pwm values.
+
+Here is the actual PID code that is currently running in the 'bot as
+demonstrated at the January DPRG meeting.
+
+/* ------------------------------------------------------------------- */
+/* speedctrl.a		assembly speed controller for SRat
+
+	09 Apr 97 dpa	Created
+	16 Apr 97 dpa	srat03 version.
+			
+/* ------------------------------------------------------------------- */
+
+#define TMAX 25600
+
+/* ------------------------------------------------------------------- */
+/* globals */
+
+variable_speedctrl_enable: FDB 1	/* enable speed controller */
+
+variable_Lvel:		FDB 0		/* speed controller inputs */
+variable_Rvel:		FDB 0
+
+variable_kpro:		FDB 3		/* proportional constant */
+variable_kdrv:		FDB 3		/* derivative constant */
+
+variable_leftacc:	FDB 0		/* velocity accumulators */
+variable_rightacc:	FDB 0
+
+/* ------------------------------------------------------------------- */
+/* locals */
+
+leftlast:		FDB 0
+rightlast:		FDB 0
+lf:			FDB 0
+rt:			FDB 0
+Ltmp:			FDB 0
+Rtmp:			FDB 0
+
+/* ------------------------------------------------------------------- */
+
+
+subroutine_sctrl:
+	LDD	variable_speedctrl_enable
+	BNE	do_sctrl
+	RTS
+
+do_sctrl:
+
+	/* lf = (Lvel - left_velocity)*256; */
+	LDD	variable_Lvel
+	SUBD	variable_left_velocity
+	LDX	#8
+	JSR	int_shiftL	/* integer left shift of 8 = *256 */	
+	STD	lf
+
+	/* rt = (Rvel - right_velocity)*256; */
+	LDD	variable_Rvel
+	SUBD	variable_right_velocity
+	LDX	#8
+	JSR	int_shiftL
+	STD	rt
+
+	/* Ltmp = lf/kpro; */
+	LDD	lf
+	LDX	variable_kpro
+	JSR	sdiv		/* signed 16x16 divide */
+	STD	Ltmp
+
+	/* Rtmp = rt/kpro */
+	LDD	rt
+	LDX	variable_kpro
+	JSR	sdiv
+	STD	Rtmp
+
+	/* Ltmp += ((lf - leftlast)/kdrv); */
+	LDD	lf
+	SUBD	leftlast
+	LDX	variable_kdrv
+	JSR	sdiv
+	ADDD	Ltmp
+	STD	Ltmp
+
+	/* leftlast = lf; */
+	LDD	lf
+	STD	leftlast
+
+	/* Rtmp += ((rt - rightlast)/kdrv); */
+	LDD	rt
+	SUBD	rightlast
+	LDX	variable_kdrv
+	JSR	sdiv
+	ADDD	Rtmp
+	STD	Rtmp
+
+	/* rightlast = rt; */
+	LDD	rt
+	STD	rightlast
+
+	/* leftacc += Ltmp; */
+	/* if (leftacc > TMAX) leftacc = TMAX; */
+	/* else if (leftacc < -TMAX) leftacc = -TMAX; */
+
+	LDD	variable_leftacc
+	ADDD	Ltmp
+	LDX	#TMAX
+	JSR	int_clip		/* clip value in D to +- X */
+	STD	variable_leftacc
+
+	/* rightacc += Rtmp; */
+	/* if (rightacc > TMAX) rightacc = TMAX; */
+	/* else if (rightacc < -TMAX) rightacc = -TMAX; */
+
+	LDD	variable_rightacc
+	ADDD	Rtmp
+	LDX	#TMAX
+	JSR	int_clip
+	STD	variable_rightacc
+
+	/* pwmR(rightacc/256); */
+	LDAB	variable_rightacc	/* hibyte -> register lobyte */
+	CLRA				/* clear register hibyte */
+	JSR	subroutine_pwmR 
+
+	/* pwmL(leftacc/256); */
+	LDAB	variable_leftacc	/* hibyte -> register lobyte */
+	CLRA				/* clear register hibyte */
+	JSR	subroutine_pwmL 
+
+sc_exit:
+
+	RTS
+
+
+/* ------------------------------------------------------------------- */
+/* EOF speedctrl.a */
+
