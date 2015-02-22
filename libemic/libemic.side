@@ -1,7 +1,7 @@
-libmysonar.cpp
-mysonar.h
+libemic.cpp
+emic_hndlr.cpp
+emic_hndlr.h
 -I ./../../../../
-mysonar.cpp
 >compiler=C++
 >memtype=cmm main ram compact
 >optimize=-Os

@@ -1,0 +1,19 @@
+libmycommand.cpp
+mycommand.cpp
+mycommand.h
+-I ./../../../../
+-L ./../libeasyvr
+EasyVR_hndlr.cpp -> ../libeasyvr/EasyVR_hndlr.cpp
+EasyVR_Hndlr.h -> ../libeasyvr/EasyVR_Hndlr.h
+-L ./../libemic
+ParserTbl.h
+emic_hndlr.cpp -> ../libemic/emic_hndlr.cpp
+emic_hndlr.h -> ../libemic/emic_hndlr.h
+>compiler=C++
+>memtype=cmm main ram compact
+>optimize=-Os
+>-m32bit-doubles
+>-fno-exceptions
+>-fno-rtti
+>-create_library
+>BOARD::ACTIVITYBOARD

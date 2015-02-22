@@ -21,6 +21,11 @@ extern "C" {
 #define MODE_SNGL	  0x01
 #define	 MODE_CONT  0x00
 
+#define NORTH 0
+#define EAST  90
+#define SOUTH 180
+#define WEST  270
+
 /**
  * @brief Initialize the Compass
  *
@@ -53,17 +58,15 @@ void compass_init(unsigned char cMode);
  * @returns void, but it will display an error message if the
  * compass module does not respond. 
  */
-void compass_read(int *px, int *py, int *pz);
+void compass_read(int *px, int *py, int *pz);     // Raw compass value reading.
 
-void compass_setCal(int calx, int caly);
+void compass_setCal(int calx, int caly);          // Force calibration values.
 
-int compass_smplHeading();
+int compass_smplHeading();                        // Return current adjusted heading 
 
-int compass_diff(int curHead, int desHead);
+int compass_diff(int curHead, int desHead);       // Return angle delta between current & destination
 
-int compass_calibrate(void);
-
-int compCalc(int max, int min);
+int compass_calibrate(void);                      // Determine compass calibration values.
 
 #if defined(__cplusplus)
 }

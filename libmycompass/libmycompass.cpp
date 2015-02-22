@@ -25,13 +25,13 @@ int main()                                      // Main function
   compass_init(MODE_CONT);                      // Initialize compass to continuos read mode.
   
   /* Calibrate the compass module */
-  servo_set(WHEEL_L_PIN, 1490);               // Rotate Left wheel slowly.
-  servo_set(WHEEL_R_PIN, 1490);               // Rotate Right wheel slowly in the opposite direction.
+  servo_set(WHEEL_L_PIN, 1490);                 // Rotate Left wheel slowly.
+  servo_set(WHEEL_R_PIN, 1490);                 // Rotate Right wheel slowly in the opposite direction.
   
-  compass_calibrate();                        // Call compass calibration routine.
+  compass_calibrate();                          // Call compass calibration routine.
 
-  servo_set(WHEEL_L_PIN, 1500);               // Stop the Left wheel
-  servo_set(WHEEL_R_PIN, 1500);               // Stop the Right wheel
+  servo_set(WHEEL_L_PIN, 1500);                 // Stop the Left wheel
+  servo_set(WHEEL_R_PIN, 1500);                 // Stop the Right wheel
   
   while(1)                                      // Repeat indefinitely
   {

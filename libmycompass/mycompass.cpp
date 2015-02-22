@@ -12,6 +12,8 @@ int gCal_x = 0;                                 // Compass calibration X value.
 int gCal_y = 0;                                 // Compass calibration y value.
 i2c *hmcBus;                                    // Compass I2C bus to communicate with module.
 
+int compCalc(int max, int min);                 // Calculate axis calibration value.
+
 /* Initialize Compass */
 void compass_init(unsigned char cMode){
 
@@ -72,6 +74,8 @@ int compass_smplHeading(){
 }
 
 /* Return differencce between Current heading and Desired Heading */
+/* Positive values indicates desired heading is Left of Current heading
+ * Negative values indicate desired heading is right of Current heading */
 int compass_diff(int curHead, int desHead){
 
   if ((curHead > desHead) && ((curHead - desHead) <= 180)){

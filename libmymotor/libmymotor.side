@@ -1,7 +1,9 @@
-libmysonar.cpp
-mysonar.h
+libmymotor.cpp
+mymotor.cpp
+mymotor.h
 -I ./../../../../
-mysonar.cpp
+-L ./../libmycompass
+-L ./../libemic
 >compiler=C++
 >memtype=cmm main ram compact
 >optimize=-Os

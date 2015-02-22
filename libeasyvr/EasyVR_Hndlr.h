@@ -160,7 +160,8 @@
 #define   ERRBTEMP        20              // Invalid SD command stored in memory
 #define   ERRDURR         23              // Bad pattern durations
 
-#define BREAK_TRIES       8
+#define   TIMEOUT		  -1
+#define   BREAK_TRIES     8
 #define   VR              1
 #define   ERR             2
 #define   TRIG            3

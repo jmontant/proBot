@@ -4,7 +4,7 @@
 //
 
 #include "simpletools.h"
-#include "fdserial.h"
+#include "serial.h"
 #include "robot_defs.h"
 #include "EasyVR_Hndlr.h"
 
@@ -15,7 +15,7 @@ int   vrWrite(char Ch);                           // Write to EasyVR module
 char  vrRead(void);                               // Read from EasyVR module
 int   vrBlink(int led);                           // Blink LED appropriately
 
-fdserial *vr;                                     // Pointer to serial EasyVR port
+serial *vr;                                     // Pointer to serial EasyVR port
 
 /* Loop forever waiting for the valid trigger word */
 int vrGetTrigger(int word){
@@ -34,7 +34,7 @@ int vrGetTrigger(int word){
 
 /* Intitialize the serial port, the VR LED, and send the break command to the EasyVR module */
 int vrInit(void){
-  vr = fdserial_open(VR_RX_PIN, VR_TX_PIN, 0, 9600);
+  vr = serial_open(VR_RX_PIN, VR_TX_PIN, 0, 9600);
   pause(100);
   set_direction(LED_VR_PIN, 1);
   set_direction(LED_ERR_PIN, 1);
@@ -189,12 +189,12 @@ int vrWrite(char ch){
 #ifdef VR_DEBUG
   print(" vrWrite = %c\n", ch);
 #endif
-  fdserial_txChar(vr, ch);
+  serial_txChar(vr, ch);
 }
 
 char vrRead(void){
   char result;
-  result = fdserial_rxChar(vr);
+  result = serial_rxChar(vr);
 #ifdef VR_DEBUG
   print(" vrRead = %c\n", result);
 #endif
@@ -205,17 +205,17 @@ int vrBlink(int led){
   switch(led) {
     case TRIG:
       set_outputs(LED_VR_PIN, LED_ERR_PIN, TRIG);
-      pause(600);
+      pause(400);
       set_outputs(LED_VR_PIN, LED_ERR_PIN, 0);
       break;
     case VR:
       set_output(LED_VR_PIN, 1);
-      pause(600);
+      pause(200);
       set_output(LED_VR_PIN, 0);
       break;
     case ERR:
       set_output(LED_ERR_PIN, 1);
-      pause(600);
+      pause(400);
       set_output(LED_ERR_PIN, 0);
       break;
   }
