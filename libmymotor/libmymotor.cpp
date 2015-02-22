@@ -2,13 +2,13 @@
  *  MyMotor - Full control of robot wheel motors (servos)
  *  from an independent cog.
  */
+#include "servo.h"
+#include "EmicHndlr.h"
+#include "mycompass.h"
 
 #include "mymotor.h"
 #include "robot_defs.h"
 #include "simpletools.h"
-#include "servo.h"
-#include "emic_hndlr.h"
-#include "mycompass.h"
 
 
 int main(){

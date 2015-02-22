@@ -46,7 +46,8 @@ static volatile int     curHeading        = 0;        // Current compass heading
 static volatile int     desHeading        = 0;        // Desired (new) compass heading
 static volatile int     orgHeading        = 0;        // Compass heading when origin was set.
 
-struct  pose  gps;                    // Robot's global position relative to starting (origin).
+struct  pose  gps;                                    // Robot's global position
+                                                      //  relative to starting (origin).
 
 /* Set the speed of a single servo (0-100%) based on direction and velocity provided */
 void set_servo(int vel, int motor_index){
@@ -66,8 +67,9 @@ void set_servo(int vel, int motor_index){
 }
 
 /* Start SpeedControl function in separate cog*/
-void initMotorControl(void){
+int initMotorControl(void){
   int mymtr_cogID = cogstart(&motorControl, NULL, mymtr_stack, sizeof(mymtr_stack));
+  return(mymtr_cogID);
 }
 
 /* MotorControl running in independent cog */
@@ -130,22 +132,18 @@ void motorControl(void *par){
         
         leftError = rightError = 0;                               // Start with error values at zero.
         if((mMode & 0x01) == 0x01){
-//dprint(term,"Proportional\n");
           leftError  = K_PRO * leftDelta;                         // Proportional speed adjustments 
           rightError = K_PRO * rightDelta;                        //  of left & right servos.
         }
         if((mMode & 0x02) == 0x02){
-//dprint(term,"Integral\n");
           leftError  += integralError;                            // Plus Integral error
           rightError += integralError;
         }
         if((mMode & 0x04) == 0x04){
-//dprint(term,"Derivative\n");
-          leftError  += K_DRV * (left_velClicks - leftLast);           // Add in Derivative error
+          leftError  += K_DRV * (left_velClicks - leftLast);      // Add in Derivative error
           rightError += K_DRV * (right_velClicks - rightLast);
         }          
         if(mMode == 0x00){                                        // Straight motor mode,
-//dprint(term,"Straight\n");
           set_servo((des_vel_clicks / CLICKS), 0);                //  so just set servos to
           set_servo((des_vel_clicks / CLICKS), 1);                //  desired velocity.
           break;
@@ -162,11 +160,6 @@ void motorControl(void *par){
         if (mPower[1] > V_MAX) mPower[1] = V_MAX;                 // Limit max right servo velocity
           else if (mPower[1] < -V_MAX) mPower[1] = -V_MAX;
 
-//dprint(term,"left_velClicks=%d, right_velClicks=%d, des_vel_clicks=%d, leftDelta=%d, rightDelta=%d\n",
-//              left_velClicks, right_velClicks, des_vel_clicks, leftDelta, rightDelta);
-//dprint(term,"des_bias_clicks=%d, integral=%2.2f, leftError=%2.2f, rightError=%2.2f, mPower[L]=%d, mPower[R]=%d\n",
-//              des_bias_clicks, integral, leftError, rightError, mPower[0], mPower[1]);
-        
         set_servo(mPower[0], 0);                                  // Alter left servo speed
         set_servo(mPower[1], 1);                                  // Alter left servo speed
 
@@ -238,7 +231,7 @@ void init_encoders(void){
 
 // Return current velocity of a particular motor in clicks/interval
 float get_velClicks(int motor_index){
-  int count;
+  int count = 0;
 
   if (motor_index == 0){
     count = PHSA;                                       // Retrieve count for left encoder
@@ -296,7 +289,7 @@ void  motorRotate(int dir, int deg){
  *  Rotate Left/Right a specified number of degrees
  *  Face a particular compass heading
  */
-  int angleDiff;
+  int angleDiff = 0;
   
   curHeading = compass_smplHeading();                   // Get current heading from compass
 
@@ -389,4 +382,5 @@ pose  motorGetPose(void){
   }    
   return(gps);                                          // Return pointer to valid gps structure.
 }  
+
 

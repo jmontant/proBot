@@ -1,9 +1,7 @@
-libmycompass.cpp
-mycompass.cpp
-mycompass.h
+libEmicHndlr.cpp
+EmicHndlr.cpp
+EmicHndlr.h
 -I ./../../../../
--I ./../../Motor/libservo
--L ./../../Motor/libservo
 >compiler=C++
 >memtype=cmm main ram compact
 >optimize=-Os
@@ -11,5 +9,4 @@ mycompass.h
 >-fno-exceptions
 >-fno-rtti
 >-create_library
->linker::-lservo
 >BOARD::ACTIVITYBOARD

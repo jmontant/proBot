@@ -1,7 +1,7 @@
 /*
-  HMC compass code based on David Betz' code from
-  code.google.com/p/propgcc.
-*/
+ *  HMC5883L compass code based on David Betz' code from
+ *  code.google.com/p/propgcc.
+ */
 
 #include  "mycompass.h"                         // Include the myCompass header file.
 #include  "simplei2c.h"                         // Need the I2C library to talk to the compass module.
@@ -138,3 +138,4 @@ int compCalc(int max, int min){
     return calVal;                            // Return positive calVal to be added to raw readings.
   }        
 }  
+

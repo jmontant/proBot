@@ -2,13 +2,13 @@
  * MySonar - Runs the Ping))) Ultrasonic sensor in its own cog.
  */
 
-#include "mysonar.h"
-#include "robot_defs.h"
-#include "simpletools.h"
+#include  "mysonar.h"
+#include  "robot_defs.h"
+#include  "simpletools.h"
 
 
 int main(){
-  int turnAngle;
+  int turnAngle = 0;
   struct target sonar;
   
   initSonarControl();                  // Start sonar_control in separate cog.
@@ -48,3 +48,4 @@ int main(){
   
   return 0;
 }
+

@@ -2,14 +2,18 @@ libmymotor.cpp
 mymotor.cpp
 mymotor.h
 -I ./../../../../
+-I ./../../Motor/libservo
+-L ./../../Motor/libservo
+-I ./../libEmicHndlr
+-L ./../libEmicHndlr
+-I ./../libmycompass
 -L ./../libmycompass
--L ./../libemic
 >compiler=C++
 >memtype=cmm main ram compact
 >optimize=-Os
 >-m32bit-doubles
 >-fno-exceptions
 >-fno-rtti
->-ltiny
 >-create_library
+>linker::-lservo -lEmicHndlr -lmycompass
 >BOARD::ACTIVITYBOARD

@@ -9,6 +9,7 @@
 * @brief HMC5883L Compass Library and test harness.
 *   Modified by Paul Bammel Jun 2014
 *     - so calling programs don't need to open an I2C bus.
+*     - Added compassDiff to find difference between two compass headings.
 *   Modified by Paul Bammel Oct 2014
 *     - to allow robot to calibarate compass and store values in EEPROM.
 *

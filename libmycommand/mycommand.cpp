@@ -7,8 +7,8 @@
  */
 
 #include  "robot_defs.h"        // General robot definitions and I/O pin assignments
-#include  "EasyVR_Hndlr.h"      // EasyVR module handler
-#include  "emic_hndlr.h"        // Emic text to speech module handler
+#include  "EasyVRhndlr.h"       // EasyVR module handler
+#include  "EmicHndlr.h"         // Emic text to speech module handler
 #include  "mycommand.h"         // Speech command recognition library
 #include  "ParserTbl.h"         // English sentence parser tables
 #include  "simpletools.h"       // Provides cogStart and other basic functions
