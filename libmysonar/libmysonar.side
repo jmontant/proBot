@@ -6,7 +6,6 @@ mysonar.h
 -L ./../../Motor/libservo
 -I ./../../Sensor/libping
 -L ./../../Sensor/libping
-sonarfunc.cpp
 sonarfind.cpp
 >compiler=C++
 >memtype=cmm main ram compact

@@ -79,9 +79,7 @@ void sonar_control(void *par)
         
         sonarPointAt(90);                           // Look straight ahead (90 degrees).
         slope.center = pingDist;                    // Save distance for "stop" check.
-        
-        
-        
+        lastCheck.center = pingDist;
         sFunc = STOP;                               // Only check clearance once.
         break;
       
@@ -125,14 +123,14 @@ struct cmd_struct sonarCommand(struct cmd_struct cmdRequest){
   switch(cmdRequest.action){
     case SWEEP:
     case SCAN:
-      range = cmdRequest.value;
+      range = cmdRequest.value1;
       if (range > 90) range = 90;               // Make sure range doesn't exceed 90 degrees.
       panStart = 90 - range;                    // Start scan at range degrees left of center.  
       panEnd = 90 + range;                      // End scan at range degrees right of center.
       sFunc = cmdRequest.action;                // Select single scan or continuous sweep.
       break;
     case POINT:
-      newDir = cmdRequest.value;                // Set newDir to value provided
+      newDir = cmdRequest.value1;               // Set newDir to value provided
       sFunc = cmdRequest.action;                // Turn head
       break;
     case GETFUNC:
@@ -140,24 +138,32 @@ struct cmd_struct sonarCommand(struct cmd_struct cmdRequest){
       return(cmdResult);                        // Return current value of sFunc.
       break;
     case TARGET:
-      switch(cmdRequest.value){
+      switch(cmdRequest.value1){
         case CLOSEST:
           cmdResult.direction  = minDir;
-          cmdResult.value = minDist;
+          cmdResult.value1 = minDist;
           break;
         case FARTHEST:
           cmdResult.direction  = maxDir;
-          cmdResult.value = maxDist;
+          cmdResult.value1 = maxDist;
           break;
         default:
           cmdResult.direction  = pingDir;
-          cmdResult.value = pingDist;
+          cmdResult.value1 = pingDist;
           break;
       }
       return(cmdResult);                        // Return target results
       break;
     case SETINC:
-      sweepInc = cmdRequest.value;              // Set sweep/scan increment value.
+      sweepInc = cmdRequest.value1;              // Set sweep/scan increment value.
+      break;
+    case  AVOID:
+      if(lastCheck.center < 15){
+        cmdResult.action = STOP;
+      }        
+      if(slope.left < 0){                       // I'm assuming negative slope is toward obstacle
+        
+      }        
       break;
     default:
       sFunc = cmdRequest.action;                // Simple command, no special actions.
@@ -165,8 +171,4 @@ struct cmd_struct sonarCommand(struct cmd_struct cmdRequest){
   }    
 }
 
-/* Return struct with distance to both edges */
-obstacle sonarGetClearance(void){
-  return(slope);
-}  
 

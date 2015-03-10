@@ -24,7 +24,7 @@ int sonarFindTarget(int type){
   
   hAngle = ((leftEdge + rightEdge) / 2);  // Angle for center of the object (head perspective).
   sonarPointAt((int) hAngle);             // Turn head toward center of object.
-  sonarPingNow();                         // Confirm distance to target.
+                                          //  and confirm distance to target.
   
   num = ((pingDist * sin(hAngle*PI/180)) + 6.5); // Establish the numerator of our trig calculation.
   den = (pingDist * cos(hAngle*PI/180));  // Establish the denominator of the triq calculation.
@@ -50,7 +50,6 @@ int findLeftEdge(int type){
   
   while(tarDir < 180){                    // Until we reach or exceed 180 degrees (Left)
     sonarPointAt(++tarDir);               // Keep looking further left (1 degree at a time)
-    pingDist = ping_cm(PING_PIN);         // Checking distance to target
     if(type == CLOSEST && pingDist >= tarDist+10){  // Difference of 10cm determines edge.
       return tarDir;
     } else {
@@ -78,7 +77,6 @@ int findRightEdge(int type){
   
   while(tarDir > 0){                      // Until we reach or exceed 0 degrees (Right)
     sonarPointAt(--tarDir);               // Keep looking further left (1 degree at a time)
-    pingDist = ping_cm(PING_PIN);         // Checking distance to target
     if(type == CLOSEST && pingDist >= tarDist+10){  // Difference of 10cm determines edge.
       return tarDir;
     } else {
