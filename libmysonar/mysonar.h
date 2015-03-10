@@ -1,8 +1,9 @@
 /*
- *  MySonar - Ultrasonic Ping))) sensor handler
+ *  @file mysonar.h
  *
- *  written by Paul Bammel April 2014
+ *  @author Paul Bammel April 2014
  *
+ *  @brief MySonar - Ultrasonic Ping))) sensor handler
  */
 
 #ifndef MYSONR_H
@@ -12,6 +13,8 @@
 extern "C" {
 #endif
 
+#include  "robot_defs.h"
+
 // General definitions
 #define CURRENT     1
 #define CLOSEST     2
@@ -19,21 +22,49 @@ extern "C" {
 #define SINGLE      4
 #define CONTINUOUS  5
 
+
 struct target {
   int dist;                                 // Distance to selected target.
   int dir;                                  // Direction to selected target.
 };  
 
-int   initSonarControl(void);              // Start sonar_control in separate cog.
+struct obstacle {                           // Distance to objects (walls) by robot.
+  int right;                                // Far right edge (object/wall)
+  int left;                                 // Far left edge (object/wall)
+  int center;                               // Straight in front of robot
+};  
+
+static volatile int sFunc     = STOP;       // Current sonar function being performed
+static volatile int pingDist  = 0;          // Current distance returned by Ping sensor.
+static volatile int pingDir   = 0;          // Current direction Ping sensor (head) is facing.
+static volatile int newDir    = 0;          // New direction Ping sensor (head) should face.
+static volatile int minDist   = 0;          // Distance to closest object ping can see
+static volatile int minDir    = 0;          // Direction to closest object seen
+static volatile int maxDist   = 0;          // Distance to farthest object ping can see
+static volatile int maxDir    = 0;          // Direction to farthest object seen
+static volatile int sweepInc  = 5;          // Number of degrees to adv when scanning/sweeping
+static volatile int panStart  = 0;          // Right limit(edge) of Sweep/Scan operation.
+static volatile int panEnd    = 180;        // Left limit(edge) of Sweep/Scan operation.
+
+// Sonar function prototypes
+int   initSonarControl(void);               // Start sonar_control in separate cog.
 void  sonarPointAt(int angle);              // Turn ping sensor to face a given direction.
+struct cmd_struct sonarCommand(struct cmd_struct cmdRequest);
 void  sonarScan(int range=90);              // Scan a particular range either side of straight ahead.
 void  sonarPing(void);                      // Repeatedly ping whatever direction head is facing.
 int   sonarPingNow(void);                   // Perform a single ping and update pingDist variable.
 void  sonarSetInc(int inc);                 // Set sweep/scan increment value.
 target  sonarGetTarget(int type);           // Return Selected Dist & Dir values.
+void  sonarFindClearance(void);             // Find dist to Left & Right "edges" objects.
+obstacle sonarGetClearance(void);           // Return distance to left & right "edges".
 void  sonarStop(void);                      // Stop any sonar activity at next interval.
 int   sonarGetFunction(void);               // Return current sonar function being performed.
 int   sonarFindTarget(int type);            // Return angle to target center (pos=right, neg=left)
+
+/* Private sonar function prototypes */
+void  sonar_control(void *par);             // Independent cog sonar control template definition.
+int   findLeftEdge(int type);               // Left Edge detection function template definition.
+int   findRightEdge(int type);              // Right Edge detection function template definition.
 
 #if defined(__cplusplus)
 }

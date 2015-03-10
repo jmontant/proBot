@@ -49,23 +49,6 @@ static volatile int     orgHeading        = 0;        // Compass heading when or
 struct  pose  gps;                                    // Robot's global position
                                                       //  relative to starting (origin).
 
-/* Set the speed of a single servo (0-100%) based on direction and velocity provided */
-void set_servo(int vel, int motor_index){
-  if (motor_index == 0){                    // Motor index = 0 (Left servo)
-    if (mFunc == FORWARD){
-      servo_speed(WHEEL_L_PIN, vel);        // Set left servo speed forward
-    } else {
-      servo_speed(WHEEL_L_PIN, -vel);       // Set left servo speed reverse
-    }
-  } else {                                  // Motor index = 1 (Right servo)
-    if (mFunc == FORWARD){
-      servo_speed(WHEEL_R_PIN, -vel);       // Set right servo speed forward
-    } else {
-      servo_speed(WHEEL_R_PIN, vel);        // Set right servo speed reverse
-    }
-  }
-}
-
 /* Start SpeedControl function in separate cog*/
 int initMotorControl(void){
   int mymtr_cogID = cogstart(&motorControl, NULL, mymtr_stack, sizeof(mymtr_stack));
@@ -244,143 +227,103 @@ float get_velClicks(int motor_index){
   }
 }
 
-// Set a direction and motion velocity
-void motorMove(int dir, int vel, int dist){
-  if(dir == FORWARD) mSign = 1; else mSign = -1;
-  des_vel_clicks = CLICKS * abs(vel);                   // Convert vel to # of Clicks equivalent.
-  if (vel > V_MAX){
-    des_vel_clicks = CLICKS * V_MAX;                    // Limit max servo velocity
-  } else if (vel < -V_MAX){
-    des_vel_clicks = CLICKS * V_MAX;                    // and convert to # of Clicks equivalent.
-  }    
-  desInchDist = dist;                                   // Set desired distance if provided.
-  curInchDist = 0.0;                                    // Reset current distance traveled.
-  des_bias_clicks = 0;                                  // Start bias at zero for a straight line.
-  integral = 0.0;                                       // Reset Integral to zero.
-  mFunc = dir;                                          // Motor function equal to direction of travel.
-}
-
-// Adjust bias to make robot swerve left or right.
-void motorSetBias(float bias){
-  des_bias_clicks = CLICKS * bias;                      // Express bias in clicks per interval.
-}
-
-/* Rotate Left/Right a particular number of degrees
-void  motorRotate(int dir, int deg){
-  curHeading = compass_smplHeading();                   // Get current heading from compass
-  if(dir == RIGHT){
-    desHeading = curHeading + deg;                      // Add turn degrees to current heading
-    if (desHeading > 360){
-      desHeading = desHeading - 360;                    // Adjust value if result is greater than 360
+/* Set the speed of a single servo (0-100%) based on direction and velocity provided */
+void set_servo(int vel, int motor_index){
+  if (motor_index == 0){                    // Motor index = 0 (Left servo)
+    if (mFunc == FORWARD){
+      servo_speed(WHEEL_L_PIN, vel);        // Set left servo speed forward
+    } else {
+      servo_speed(WHEEL_L_PIN, -vel);       // Set left servo speed reverse
     }
-    mFunc = dir;
-  } else {
-    desHeading = curHeading - deg;                      // Subtract turn degrees from current heading
-    if (desHeading < 0){
-      desHeading = desHeading + 360;                    // Adjust value if result is negative
+  } else {                                  // Motor index = 1 (Right servo)
+    if (mFunc == FORWARD){
+      servo_speed(WHEEL_R_PIN, -vel);       // Set right servo speed forward
+    } else {
+      servo_speed(WHEEL_R_PIN, vel);        // Set right servo speed reverse
     }
-    mFunc = dir;
   }
 }
-*/
 
-void  motorRotate(int dir, int deg){
-/*
- *  Rotate Left/Right a specified number of degrees
- *  Face a particular compass heading
- */
-  int angleDiff = 0;
+/* Generic robot command structure interface */
+struct cmd_struct motorCommand(struct cmd_struct cmdRequest){
   
-  curHeading = compass_smplHeading();                   // Get current heading from compass
-
-  switch(dir){
-    case RIGHT:
-      desHeading = curHeading + deg;                      // Add turn degrees to current heading
-      if (desHeading > 360){
-        desHeading = desHeading - 360;                    // Adjust value if result is greater than 360
-      }
-      mFunc = dir;
-    case LEFT:
-      desHeading = curHeading - deg;                      // Subtract turn degrees from current heading
-      if (desHeading < 0){
-        desHeading = desHeading + 360;                    // Adjust value if result is negative
-      }
-      mFunc = dir;
-    case FACE:
-      desHeading = deg;
-      angleDiff = compass_diff(curHeading, desHeading);     // Diff between current & Desired heading
-      if(angleDiff < 0){                                    // Right is the shortest turn direction.
-        mFunc = RIGHT;
-      } else {                                              // Left is the shortest turn direction
-        mFunc = LEFT;
-      }
-  }
-}
-
-/* Rotate to a specific compass heading (angle) 
-int motorRotateTo(int newHeading){
-  int angleDiff;
-  desHeading = newHeading;
+  struct cmd_struct cmdResult;
   
-  curHeading = compass_smplHeading();                   // Get current heading from compass
-  angleDiff = compass_diff(curHeading, desHeading);     // Diff between current & Desired heading
-  if(angleDiff < 0){                                    // Right is the shortest turn direction.
-    mFunc = RIGHT;
-  } else {                                              // Left is the shortest turn direction
-    mFunc = LEFT;
-  }
-}      
-*/
-
-// Return current motor function
-int motorGetFunction(void){
-  return mFunc;                                         // Return current motor function
-}
-
-// Force motors to stop right away.
-int motorStop(void){
-  mFunc = STOP;                                         // Set motor function to Stop
-}
-
-void  motorSetMode(unsigned char mode){
-/*
- *  Establish motor control mode - See motor control contants in header file.
- *  Standard, Proportional, Proportional and Integral, etc.
- */
-  mMode = mode;
-}
-
-int motorSetPosition(float x, float y){
-/*
- *  Set new x,y coordinates, if no values provided assume 0,0 (new origin)
- *  Global heading will always be set to current compass heading.
- *  Relative heading will only be reset if establishing a new origin.
- */
-  gps.xPos = x;                                         // Set/Reset global x position coordinate.
-  gps.yPos = y;                                         // Set/Reset global y position coordinate.
-  gps.gHeading = compass_smplHeading();                 // Get current global heading from compass.
-  if (x==0 && y==0){                                    // If setting the origin location...
-    gps.rHeading = 0;                                   //  Set relative heading to zero.
-    orgHeading = gps.gHeading;                          //  Remember origin compass heading.
+  switch(cmdRequest.action){
+    case  MOVE:
+      if(cmdRequest.direction == FORWARD)
+        mSign = 1; else mSign = -1;
+      des_vel_clicks = CLICKS * abs(cmdRequest.value1); // Convert vel to # of Clicks equivalent.
+      if (cmdRequest.value1 > V_MAX){
+        des_vel_clicks = CLICKS * V_MAX;                // Limit max servo velocity
+      } else if (cmdRequest.value1 < -V_MAX){
+        des_vel_clicks = CLICKS * V_MAX;                // and convert to # of Clicks equivalent.
+      }    
+      desInchDist = cmdRequest.value2;                  // Set desired distance if provided.
+      curInchDist = 0.0;                                // Reset current distance traveled.
+      des_bias_clicks = 0;                              // Start bias at zero for a straight line.
+      integral = 0.0;                                   // Reset Integral to zero.
+      mFunc = cmdRequest.direction;                     // Motor function equal to direction of travel.
+      break;
+    case  TURN:
+      curHeading = compass_smplHeading();               // Get current heading from compass
+    
+      switch(cmdRequest.direction){
+        case RIGHT:
+          desHeading = curHeading + cmdRequest.value1;  // Add turn degrees to current heading
+          if (desHeading > 360){
+            desHeading = desHeading - 360;              // Adjust value if result is greater than 360
+          }
+          mFunc = cmdRequest.direction;
+        case LEFT:
+          desHeading = curHeading - cmdRequest.value1;  // Subtract turn degrees from current heading
+          if (desHeading < 0){
+            desHeading = desHeading + 360;              // Adjust value if result is negative
+          }
+          mFunc = cmdRequest.direction;
+        case FACE:
+          desHeading = cmdRequest.value1;
+          int angleDiff = compass_diff(curHeading, desHeading); // Diff between current & Desired heading
+          if(angleDiff < 0){                            // Right is the shortest turn direction.
+            mFunc = RIGHT;
+          } else {                                      // Left is the shortest turn direction
+            mFunc = LEFT;
+          }
+      }
+      break;
+    case  BIAS:
+      des_bias_clicks = CLICKS * cmdRequest.value1;     // Express bias in clicks per interval.
+      break;
+    case  MODE:
+      mMode = cmdRequest.value1;                        // Establish motor control mode.
+      break;
+    case  SETPOS:
+      gps.xPos = cmdRequest.value1;                     // Set/Reset global x position coordinate.
+      gps.yPos = cmdRequest.value2;                     // Set/Reset global y position coordinate.
+      gps.gHeading = compass_smplHeading();             // Get current global heading from compass.
+      if (gps.xPos==0 && gps.yPos==0){                  // If setting the origin location...
+        gps.rHeading = 0;                               //  Set relative heading to zero.
+        orgHeading = gps.gHeading;                      //  Remember origin compass heading.
+      }
+      break;
+    case  GETPOS:
+      while(gps.validPos == 0){                         // If semaphore flag False,
+        pause(1);                                       //  wait a moment and try again.
+      }
+      cmdResult.action = mFunc;
+      cmdResult.direction = gps.gHeading;
+      cmdResult.value1 = gps.xPos;
+      cmdResult.value2 = gps.yPos;
+      return(cmdResult);                                // Return pointer to valid gps structure.
+      break;
+    case  GETFUNC:
+      cmdResult.action = mFunc;
+      return(cmdResult);                                // Return current motor function
+      break;
+    case  STOP:
+      mFunc = STOP;                                     // Set motor function to Stop
+      break;
   }    
 }
-  
-int   motorSetHeading(void){
-/*
- *  Update global heading with current value from compass module
- */
-  gps.gHeading = compass_smplHeading();                 // Get current global heading from compass.
-}
-  
-pose  motorGetPose(void){
-/*
- *  Return current Pose structure of gps coordinantes
- *  Only return when semaphore flag is true.
- */
-  while(gps.validPos == 0){                             // If semaphore flag False,
-    pause(1);                                           //  wait a moment and try again.
-  }    
-  return(gps);                                          // Return pointer to valid gps structure.
-}  
 
 

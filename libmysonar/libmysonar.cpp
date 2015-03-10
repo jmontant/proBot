@@ -15,9 +15,6 @@ int main(){
   pause(500);
 
   sonarPointAt(90);                     // Face Ping))) sensor straight ahead.
-  while(sonarGetFunction() != STOP){
-    continue;                           // Wait for sweep to finish.
-  }
   
   sonarScan(30);
   while(sonarGetFunction() != STOP){

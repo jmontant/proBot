@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include "robot_defs.h"                     // General robot definitions and I/O pin assignments
+
 /* Required robot_deff.h pin definitions
  * ENC_L_PIN                                      // Left wheel encoder
  * ENC_R_PIN                                      // Right wheel encoder
@@ -61,6 +63,8 @@ int   motorStop(void);                            // Stop current motor function
 int   motorSetPosition(float x=0.0, float y=0.0); // Set robot's current position to specified values
 int   motorSetHeading(void);                      // Update heading with current value from compass module
 pose  motorGetPose(void);                         // Return current Pose structure values
+struct cmd_struct motorCommand(struct cmd_struct cmdRequest);
+
 
 #if defined(__cplusplus)
 }
