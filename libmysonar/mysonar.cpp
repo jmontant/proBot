@@ -62,19 +62,11 @@ void sonar_control(void *par)
       
       case CHECK:
         sonarPointAt(0);                            // Look to far right side (0 degrees).
-        if(pingDist < 15){                          // AS long as we're close enough.
-          slope.right = pingDist - lastCheck.right; // Calculate slope since last check.
-        } else {
-          slope.right = 0;                          // Ignore slope if clearance is okay.
-        }          
+        slope.right = pingDist - lastCheck.right;   // Calculate slope since last check.
         lastCheck.right = pingDist;                 // Remember distance for next time.
         
         sonarPointAt(180);                          // Look to far left side (180 degrees).
-        if(pingDist < 15){                          // AS long as we're close enough.
-          slope.left = pingDist - lastCheck.left;   // Calculate slope since last check.
-        } else {
-          slope.left = 0;                           // Ignore slope if clearance is okay.
-        }          
+        slope.left = pingDist - lastCheck.left;     // Calculate slope since last check.
         lastCheck.left = pingDist;                  // Remember distance for next time.
         
         sonarPointAt(90);                           // Look straight ahead (90 degrees).
@@ -86,7 +78,7 @@ void sonar_control(void *par)
       case POINT:
         if (newDir != pingDir){
           servo_angle(HEAD_PIN, newDir * 10);       // Angle*10 servo_set is in tenths of a degree.
-          pause(abs((newDir - pingDir) * 5));      // Give the servo a moment to get there.
+          pause(abs((newDir - pingDir) * 5));       // Give the servo a moment to get there.
           pingDir = newDir;                         // Set pingDir equal to "head" angle.
         }    
         pingDist = ping_cm(PING_PIN);               // Get distance for current direction.
@@ -121,23 +113,23 @@ struct cmd_struct sonarCommand(struct cmd_struct cmdRequest){
   struct cmd_struct cmdResult;
   
   switch(cmdRequest.action){
-    case SWEEP:
-    case SCAN:
+    case SWEEP:                                 // Repeatedly sweep the area for obstacles.
+    case SCAN:                                  // Perform a single scan of the area.
       range = cmdRequest.value1;
       if (range > 90) range = 90;               // Make sure range doesn't exceed 90 degrees.
       panStart = 90 - range;                    // Start scan at range degrees left of center.  
       panEnd = 90 + range;                      // End scan at range degrees right of center.
       sFunc = cmdRequest.action;                // Select single scan or continuous sweep.
       break;
-    case POINT:
+    case POINT:                                 // Point head to particular angle.
       newDir = cmdRequest.value1;               // Set newDir to value provided
       sFunc = cmdRequest.action;                // Turn head
       break;
-    case GETFUNC:
+    case GETFUNC:                               // Return current function being peerformed.
       cmdResult.action = sFunc;
       return(cmdResult);                        // Return current value of sFunc.
       break;
-    case TARGET:
+    case TARGET:                                // Return Distance and Direction to target.
       switch(cmdRequest.value1){
         case CLOSEST:
           cmdResult.direction  = minDir;
@@ -155,13 +147,13 @@ struct cmd_struct sonarCommand(struct cmd_struct cmdRequest){
       return(cmdResult);                        // Return target results
       break;
     case SETINC:
-      sweepInc = cmdRequest.value1;              // Set sweep/scan increment value.
+      sweepInc = cmdRequest.value1;             // Set sweep/scan increment value.
       break;
     case  AVOID:
       if(lastCheck.center < 15){
         cmdResult.action = STOP;
       }        
-      if(slope.left < 0){                       // I'm assuming negative slope is toward obstacle
+      if(lastCheck.left < 15 && slope.left < 0){  // I'm assuming negative slope is toward obstacle
         
       }        
       break;
