@@ -68,23 +68,6 @@ int sayInt(int value);
 */
 int demo(int value);
 
-// X Stop playback (while message is playing)
-/*
- *  Immediately stop the currently playing text-to-speech message.
- *  This command is only valid while a message is playing.
-*/
-int stop(void);
-
-// Z Pause/un-pause playback (while message is playing)
-/*
- *  Immediately pause or unpause the currently playing text-to-speech message.
- *  Emic 2 will respond with a “.” indicating that the command has successfully
- *  been received. While the playback is paused, the LED will remain RED.
- *  This command is only valid while a message is playing.
-*/
-int rest(void);
-int resume(void);
-
 // Nx Select voice:
 /*
  *   x = 0 to 8

@@ -24,14 +24,11 @@ char* itoa(int n);
 int initEmic(void)
 {
   char ch;
-  if(isIdle() == TRUE)                  // If EMIC is currently idle.
-  {
-    reset();                          // Reset EMIC to power-up defaults.
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // Failure
+  if(isIdle() == TRUE){                   // If EMIC is currently idle.
+    reset();                              // Reset EMIC to power-up defaults.
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // Failure
   }  
 }
 
@@ -45,19 +42,16 @@ int isIdle(void)
 {
   char ch;
   
-  emic_write(CR);                     // Write Carriage Return out to EMIC
+  emic_write(CR);                         // Write Carriage Return out to EMIC
   do
   {
     ch = emic_read();
   } while(ch != COLON);
 /*
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }
 */
 }
@@ -75,7 +69,7 @@ int say(char* msg)
 {
   char ch;
 
-  dprint(emic, "S%s\n", msg);    // Select desired demo message.
+  dprint(emic, "S%s\n", msg);             // Say text message provided.
   do{
     ch = emic_read();
   } while(ch != COLON);
@@ -85,7 +79,7 @@ int sayInt(int value)
 {
   char ch;
   
-  dprint(emic, "S%s.\n", itoa(value));    // Select desired demo message.
+  dprint(emic, "S%s.\n", itoa(value));    // Say integer value provided.
   do{
     ch = emic_read();
   } while(ch != COLON);
@@ -98,70 +92,11 @@ int sayInt(int value)
 */
 int demo(int value)
 {
-  dprint(emic, "D%s\n", itoa(value));    // Select desired demo message.
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
-  }  
-}
-
-/*
- *  X Stop playback (while message is playing)
- *
- *  Immediately stop the currently playing text-to-speech message.
- *  This command is only valid while a message is playing.
-*/
-int stop(void)
-{
-  emic_write('X');                    // Write 'X' out to EMIC to stop playback.
-  emic_write('\n');
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
-  }  
-}
-
-/*
- *  Z Pause/un-pause playback (while message is playing)
- *
- *  Immediately pause or unpause the currently playing text-to-speech message.
- *  Emic 2 will respond with a “.” indicating that the command has successfully
- *  been received. While the playback is paused, the LED will remain RED.
- *  This command is only valid while a message is playing.
-*/
-int rest(void)
-{
-  emic_write('Z');                    // Write 'Z' out to EMIC to pause current speech.
-  emic_write('\n');
-  if(emic_read() == '.')              // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
-  }  
-}
-
-int resume(void)
-{
-  emic_write('Z');                    // Write 'Z' out to EMIC to resume current speech.
-  emic_write('\n');
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  dprint(emic, "D%s\n", itoa(value));     // Select desired demo message.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }  
 }
 
@@ -175,19 +110,16 @@ int voice(int value)
 {
   char ch;
 
-  dprint(emic, "N%s\n", itoa(value));    // Select desired built-in voice.
+  dprint(emic, "N%s\n", itoa(value));     // Select desired built-in voice.
       do
       {
         ch = emic_read();
       } while(ch != COLON);
 /*
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }  
 */
   return TRUE;
@@ -201,14 +133,11 @@ int voice(int value)
 */
 int volume(int value)
 {
-  dprint(emic, "V%s\n", itoa(value));    // Select desired audio volume.
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  dprint(emic, "V%s\n", itoa(value));     // Select desired audio volume.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }  
 }
 
@@ -220,14 +149,11 @@ int volume(int value)
 */
 int rate(int value)
 {
-  dprint(emic, "W%s\n", itoa(value));    // Select desired talking speed.
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  dprint(emic, "W%s\n", itoa(value));     // Select desired talking speed.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }  
 }
 
@@ -240,14 +166,11 @@ int rate(int value)
 */
 int language(int value)
 {
-  dprint(emic, "L%s\n", itoa(value));    // Select desired language.
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  dprint(emic, "L%s\n", itoa(value));     // Select desired language.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }  
 }
 
@@ -260,14 +183,11 @@ int language(int value)
 */
 int parser(int value)
 {
-  dprint(emic, "P%s\n", itoa(value));    // Select desired parser.
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  dprint(emic, "P%s\n", itoa(value));     // Select desired parser.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }  
 }
 
@@ -283,16 +203,13 @@ int parser(int value)
 */
 int reset(void)
 {
-  emic_write('R');                    // Write 'R' out to EMIC to reset unit.
+  emic_write('R');                        // Write 'R' out to EMIC to reset unit.
   emic_write('\n');
 
-  if(emic_read() == COLON)            // If we get a COLON back...
-  {
-    return TRUE;                      // Success!
-  }  
-  else
-  {
-    return FALSE;                     // else Failure.
+  if(emic_read() == COLON){               // If we get a COLON back...
+    return TRUE;                          // Success!
+  } else {
+    return FALSE;                         // else Failure.
   }  
 }
 
