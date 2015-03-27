@@ -1,4 +1,4 @@
-/**
+/*
  * @file mymtos.h
  *
  * @author Paul Bammel
@@ -22,27 +22,122 @@
 extern "C" {
 #endif
 
-#define MAXTASKS 10
+//General MTOS kernel constants
+#define MAXTASKS  8               // Maximum number of tasks for MTOS kernel
+#define QUEDEPTH  3               // Maximum depth of message queues
 
-#define HELD      0
-#define RUNABLE   1
-#define SLEEPING  2
+// Task Status settings
+#define HELD        0
+#define RUNABLE     1
+#define SLEEPING    2
 
-
-//Priority classes
+// Priority classes
 #define LOW_PRI     3
 #define NORMAL_PRI  2
 #define HIGH_PRI    1
 
+// Message Queue Constants
+#define IPC_STAT    10            // Return Message Queue Status
+#define IPC_CLR     11            // Clear messageQ
+
+#define IPC_WAIT    20            // Calling process will wait to continue
+#define IPC_NOWAIT  21            // Calling process will continue immediately
+
+
 int   initTaskSwitcher(void);
+
+/**
+ *  @brief MultiTasking Kernel
+ *  
+ *  
+ *
+ *  taskStruct definition
+ *    jobID = taskList index
+ *    jobPointer = address of function to run
+ *    jobStatus = Runable, Held, Sleeping
+ *    jobDelay = CNT + (CLKFREQ * #ofSeconds)
+ *    jobPriority = High, Normal, Low
+ *    jobState = Finite State Machine index used by task if necessary
+ */
 void  taskSwitch(void *par);
-int   taskStart( void (*func)(void), int priority=NORMAL_PRI);
+
+/**
+ *  @brief Start a new task.
+ *  
+ *  Provide the function pointer to a function and this
+ *  will add it to the tasklist
+ */
+int   taskStart( void (*func)(void), int priority=NORMAL_PRI, int stat=RUNABLE);
+
+/**
+ *  @brief Set task status.
+ *  
+ *  Pass the job ID of the task along with a value
+ *  of zero to Hold the job, 1 to make Runable, or
+ *  a positive number of milliseconds to delay 
+ *  "sleep" the task before running again.
+ */
 int   taskSetStatus(int id, int value);
+
+/**
+ *  @brief Set task priority.
+ *
+ *  Set the task priority to control frequency at which the task runs.
+ *  Values: 1=High, 2=Normal, and 3=Low.
+ *  Default priority is Normal.
+ */
 int   taskSetPriority(int id, int value);
+
+/**
+ *  @brief Set task State.
+ *
+ *  Task state is information carried over from one iteration
+ *  of a task to the next. Typically used to drive a 
+ *  Finite State Machine (FSM) within the task.
+ */
 void  taskSetState(int id, int value);
+
+/**
+ *  @brief Get task Status.
+ *  
+ *  Will return the current value of a given tasks Status.
+ *    0=Held, 1=Runable, 2=Sleeping
+ */
 int   taskGetStatus(int id);
+
+/**
+ *  @brief Get task Priority.
+ *
+ *  Will return the current value of a given tasks Priority.
+ *  1=High, 2=Normal, 3=Low
+ */
 int   taskGetPriority(int id);
+
+/**
+ *  @brief Get task State.
+ *  
+ *  Will return the current value of a given tasks State parameter.
+ *  The meaning of this value is task dependent.
+ */
 int   taskGetState(int id);
+
+/**
+ *  @brief Send Message to Destination msgQ
+ *  
+ */
+int   msgsnd(int destid, int srcid, int msgtyp, struct cmd_struct msgbody);
+
+/**
+ *  @brief Receive Message from msgid msgQ
+ *  
+ */
+struct cmd_struct   msgrcv(int msgid, int msgflg);
+
+/**
+ *  @brief Alter conditions of msgQ
+ *  
+ */
+int   msgctl(int msgid, int msgcmd);
 
 #if defined(__cplusplus)
 }

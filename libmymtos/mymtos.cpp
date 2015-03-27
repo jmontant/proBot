@@ -12,6 +12,7 @@
 
 #include  "simpletools.h"
 #include  "mymtos.h"
+#include  "robot_defs.h"
 
 /*
  *taskStruct definition
@@ -22,7 +23,7 @@
  *  jobPriority = High, Normal, Low
  *  jobState = Finite State Machine index used by task if necessary
  */
-struct  taskStruct{
+struct  TaskStruct{
   int   jobID;                                      // job (task) ID.
   void  (*jobPointer)(void);                        // Pointer to task function
   int   jobStatus;                                  // Runable, Held, etc.
@@ -31,8 +32,21 @@ struct  taskStruct{
   int   jobState;                                   // Finite state per task iterations
 };  
 
-static volatile struct  taskStruct  taskList[MAXTASKS];   // Array of task Entries
+static volatile struct  TaskStruct  taskList[MAXTASKS];   // Array of task Entries
 static volatile int     nextTask  = 0;                    // Next task entry (jobID).
+
+/*
+ *  Message Queue definition
+ *    msgSrc  = Source ID of task message came from
+ *    msgBody = Comand/Status being passed to message receiver
+ */
+struct  MsgQ_Struct{
+  int   msgSrc;
+  struct cmd_struct msgBody;
+};
+
+static volatile struct MsgQ_Struct msgQue[MAXTASKS] [QUEDEPTH];
+static volatile int msgHead[MAXTASKS];  
 
 // Stack space for Speed Control cog
 unsigned int switch_stack[(160 + (50 * 4))];
@@ -80,11 +94,11 @@ void taskSwitch(void *par){
  *  Provide the function pointer to a function and this
  *  will add it to the tasklist
  */
-int taskStart( void (*func)(void), int priority){
+int taskStart( void (*func)(void), int priority, int stat){
   if(nextTask < MAXTASKS){
     taskList[nextTask].jobID = nextTask;
     taskList[nextTask].jobPointer = func;
-    taskList[nextTask].jobStatus = RUNABLE;
+    taskList[nextTask].jobStatus = stat;
     taskList[nextTask].jobDelay = 0;
     taskList[nextTask].jobPriority = priority;
     taskList[nextTask].jobState = 0;
@@ -94,10 +108,11 @@ int taskStart( void (*func)(void), int priority){
 }
 
 /*
- *  Set task state.
- *  Pass the job ID of teh task along with a value
- *  of zero to Hold the job or a positive number of milliseconds
- *  to delay "sleep" the task before running again.
+ *  Set task status.
+ *  Pass the job ID of the task along with a value
+ *  of zero to Hold the job, 1 to make Runable, or
+ *  a positive number of milliseconds to delay 
+ *  "sleep" the task before running again.
  */
 int taskSetStatus(int id, int value){
   switch(value){
@@ -164,3 +179,24 @@ int   taskGetPriority(int id){
 int   taskGetState(int id){
   return(taskList[id].jobState);
 }
+
+/*
+ *  Send message to Dest msgQ from source msgQ
+ */
+int msgsnd(int destid, int srcid, int msgtyp, cmd_struct msgbody){
+  
+}
+
+/*
+ *  Receive message from msgid message Queue
+ */  
+struct cmd_struct msgrcv(int msgid, int msgflg){
+  
+}
+
+/*
+ *  Alter conditions of Message Queue msgid
+ */
+int msgctl(int msgid, int msgcmd){
+  
+}  

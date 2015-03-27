@@ -1,6 +1,7 @@
 libmymtos.cpp
 mymtos.cpp
 mymtos.h
+-I ./../../../../
 >compiler=C++
 >memtype=cmm main ram compact
 >optimize=-Os

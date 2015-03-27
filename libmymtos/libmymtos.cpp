@@ -4,6 +4,7 @@
 
 #include  "mymtos.h"
 #include  "simpletools.h"
+#include  "robot_defs.h"
 
 void  arbitrate(void);
 void  cruise(void);
