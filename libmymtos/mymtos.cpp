@@ -193,7 +193,7 @@ int   taskGetState(int id){
  *    - Put new message in first free list node.
  *    - Insert into list based on priority
  */
-int msgsnd(int destid, int srcid, int pri, int typ, cmd_struct msg){
+int msgSnd(int destid, int srcid, int pri, int typ, cmd_struct msg){
   int nxtFree
       = msgQue[destid][msgFree[destid]].msgNext;      // Point to second node in free list
   int oldHead = msgHead[destid];                      // Temp save of current msgQue head
@@ -235,6 +235,7 @@ int msgsnd(int destid, int srcid, int pri, int typ, cmd_struct msg){
     msgQue[destid][oldHead].msgNext = tmpPtr;         // Point current msq at new node
     msgQue[destid][tmpPtr].msgNext = nxtPtr;          // Point new msg.next at next in queue
   }
+  return(IPC_QSUCC);                                  // Success! we added the msg to the queue.
 }
 
 /*
@@ -246,7 +247,7 @@ int msgsnd(int destid, int srcid, int pri, int typ, cmd_struct msg){
  *    - Make just read msg node point to old top of free list.
  *    - Make msg head point to next unread node in message list.
  */  
-cmd_struct msgrcv(int msgid, int msgflg){
+cmd_struct msgRcv(int msgid, int msgflg){
   int newHead;
   int oldFree;
   cmd_struct msg;
@@ -274,7 +275,7 @@ cmd_struct msgrcv(int msgid, int msgflg){
  *    - STAT  returns count of entries in list
  *    - CLEAR empties list of all messages
  */
-int msgctl(int msgid, int msgcmd){
+int msgCtl(int msgid, int msgcmd){
   int tmp;
   
   switch(msgcmd){

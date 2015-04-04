@@ -125,7 +125,7 @@ int   taskGetStatus(int id);
  *  @brief Get task Priority.
  *
  *  Will return the current value of a given tasks Priority.
- *  1=High, 2=Normal, 3=Low
+ *  1=High, 2=Normal, 4=Low
  */
 int   taskGetPriority(int id);
 
@@ -139,21 +139,29 @@ int   taskGetState(int id);
 
 /**
  *  @brief Send Message to Destination msgQ
- *  
+ *
+ *  Inserts new message in priority order with highest priority first in the list.
+ *  Will return an error if the message queue is full.
  */
-int   msgsnd(int destid, int srcid, int pri, int typ, cmd_struct body);
+int   msgSnd(int destid, int srcid, int pri, int typ, cmd_struct body);
 
 /**
  *  @brief Receive Message from msgid msgQ
  *  
+ *  Returns body of top priority message on queue.
+ *  Returns an error if mesage queue is empty.
+ *  
  */
-cmd_struct   msgrcv(int msgid, int msgflg=0);
+cmd_struct   msgRcv(int msgid, int msgflg=0);
 
 /**
  *  @brief Alter conditions of msgQ
  *  
+ *  Can return number of messages currently in queue.
+ *  Can also clear the queue of all messages.
+ *  
  */
-int   msgctl(int msgid, int msgcmd);
+int   msgCtl(int msgid, int msgcmd);
 
 #if defined(__cplusplus)
 }
