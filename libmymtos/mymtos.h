@@ -3,16 +3,19 @@
  *
  * @author Paul Bammel
  *
- * @version v1.00
+ * @version v1.01
  *
  * @brief This library provides cooperative multitasking kernel 
  * functions for running multiple concurrent tasks in a single cog.
  *  
- *  written by Paul Bammel -  February 2015
+ *  v1.00 Paul Bammel - February 2015
  *    - Simple cooperative kernel
  *    - All tasks (functions) run to completion before yielding
  *    - A function must provide for external state determination
  *      if it runs longer than a single iteration
+ *      
+ *  v1.01 Paul Bammel - March 2015
+ *    - Added simple Message Queue for InterProcess Communication
  */
 
 #ifndef MYMTOS_H
@@ -22,42 +25,55 @@
 extern "C" {
 #endif
 
+#include "robot_defs.h"             // Need definition of command structure.
+
 //General MTOS kernel constants
-#define MAXTASKS  8               // Maximum number of tasks for MTOS kernel
-#define QUEDEPTH  3               // Maximum depth of message queues
+#define MAXTASKS  8                 // Maximum number of tasks for MTOS kernel.
+#define QUEDEPTH  3                 // Maximum depth of message queues.
+#define NULMSG    99                // Represents a NUL pointer in message queues.
 
 // Task Status settings
-#define HELD        0
-#define RUNABLE     1
-#define SLEEPING    2
+#define HELD        0               // Task is in a Hold and will not run.
+#define RUNABLE     1               // Task will run in its' time slice.
+#define SLEEPING    2               // Task is Sleeping for X milliseconds.
 
 // Priority classes
-#define LOW_PRI     3
-#define NORMAL_PRI  2
-#define HIGH_PRI    1
+#define LOW_PRI     4               // Task will only run every fourth iteration.
+#define NORMAL_PRI  2               // Task will run every other iteration.
+#define HIGH_PRI    1               // Task will run every iteration.
 
-// Message Queue Constants
-#define IPC_STAT    10            // Return Message Queue Status
-#define IPC_CLR     11            // Clear messageQ
+// IPC Message Queue Constants
+#define IPC_STAT    0x40            // Return Message Queue Status.
+#define IPC_CLEAR   0x20            // Clear Message Queue.
+#define IPC_CREAT   0x10            // Create Message Queue.
 
-#define IPC_WAIT    20            // Calling process will wait to continue
-#define IPC_NOWAIT  21            // Calling process will continue immediately
+#define IPC_WAIT    0x04            // Calling process will wait to continue.
+#define IPC_NOWAIT  0x02            // Calling process will continue immediately.
+#define IPC_IMMEAD  0x01            // Calling process wants to be next or not at all.
 
+// IPC Message Queue Status Results
+#define IPC_QFAIL  -1               // Message Queue operation failed.
+#define IPC_QSUCC   0               // Message Queue operation was a Success.
+#define IPC_QEMPTY  1               // Message Queue is Empty.
+#define IPC_QFULL   2               // Message Queue is Full.
 
 int   initTaskSwitcher(void);
 
 /**
  *  @brief MultiTasking Kernel
  *  
- *  
+ *  Every Function submitted as a task to run will be run from "start to finish"
+ *  with each iteration. Being a cooperative system no one task should hog the processor,
+ *  and large/multipart tasks should be broken into states to control what part
+ *  should execute next.
  *
  *  taskStruct definition
- *    jobID = taskList index
- *    jobPointer = address of function to run
- *    jobStatus = Runable, Held, Sleeping
- *    jobDelay = CNT + (CLKFREQ * #ofSeconds)
+ *    jobID       = taskList index
+ *    jobPointer  = address of function to run
+ *    jobStatus   = Runable, Held, Sleeping
+ *    jobDelay    = CNT + (CLKFREQ * #ofMilliSeconds)
  *    jobPriority = High, Normal, Low
- *    jobState = Finite State Machine index used by task if necessary
+ *    jobState    = Finite State Machine index used by task if necessary
  */
 void  taskSwitch(void *par);
 
@@ -125,13 +141,13 @@ int   taskGetState(int id);
  *  @brief Send Message to Destination msgQ
  *  
  */
-int   msgsnd(int destid, int srcid, int msgtyp, struct cmd_struct msgbody);
+int   msgsnd(int destid, int srcid, int pri, int typ, cmd_struct body);
 
 /**
  *  @brief Receive Message from msgid msgQ
  *  
  */
-struct cmd_struct   msgrcv(int msgid, int msgflg);
+cmd_struct   msgrcv(int msgid, int msgflg=0);
 
 /**
  *  @brief Alter conditions of msgQ
