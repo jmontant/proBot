@@ -29,7 +29,7 @@ extern "C" {
 
 //General MTOS kernel constants
 #define MAXTASKS  8                 // Maximum number of tasks for MTOS kernel.
-#define QUEDEPTH  3                 // Maximum depth of message queues.
+#define QUEDEPTH  4                 // Maximum depth of message queues.
 #define NULMSG    99                // Represents a NUL pointer in message queues.
 
 // Task Status settings
@@ -43,9 +43,12 @@ extern "C" {
 #define HIGH_PRI    1               // Task will run every iteration.
 
 // IPC Message Queue Constants
-#define IPC_STAT    0x40            // Return Message Queue Status.
-#define IPC_CLEAR   0x20            // Clear Message Queue.
-#define IPC_CREAT   0x10            // Create Message Queue.
+#define IPC_NEXT    0x40            // Return message nodes 'next' pointer.
+#define IPC_PRI     0x20            // Return message nodes Priority.
+#define IPC_SRC     0x10            // Return message nodes Source.
+#define IPC_STAT    0x04            // Return Message Queue Status.
+#define IPC_CLEAR   0x02            // Clear Message Queue.
+#define IPC_CREAT   0x01            // Create Message Queue.
 
 #define IPC_WAIT    0x04            // Calling process will wait to continue.
 #define IPC_NOWAIT  0x02            // Calling process will continue immediately.
@@ -138,6 +141,14 @@ int   taskGetPriority(int id);
 int   taskGetState(int id);
 
 /**
+ *  @brief Initialize message Queue
+ *  
+ *  Used internaly by mtos to initialize msgQ
+ *  when task is started.
+ */
+int msgQinit(int msgQ);
+
+/**
  *  @brief Send Message to Destination msgQ
  *
  *  Inserts new message in priority order with highest priority first in the list.
@@ -161,7 +172,16 @@ cmd_struct   msgRcv(int msgid, int msgflg=0);
  *  Can also clear the queue of all messages.
  *  
  */
-int   msgCtl(int msgid, int msgcmd);
+int   msgCtl(int msgQ, int msgcmd);
+
+/**
+ *  @brief Check for WAIT flag onsent message
+ *  
+ *  Used internally by mtos to see if sending
+ *  task needs to be held.
+ *  
+ */
+int msgFlagChk(int msgid, int msgflg);
 
 #if defined(__cplusplus)
 }

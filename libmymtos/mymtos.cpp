@@ -7,13 +7,14 @@
  *    - All tasks (functions) run to completion before yielding
  *    - A function must provide for external state determination
  *      if it runs longer than a single iteration
- *  v1.01 Paul Bammel - March 2015
+ *  v1.01 Paul Bammel - April 2015
  *    - Added IPC message queue
  */
 
 #include  "simpletools.h"
 #include  "mymtos.h"
 #include  "robot_defs.h"
+
 
 /*
  *taskStruct definition
@@ -109,6 +110,8 @@ int taskStart( void (*func)(void), int priority, int stat){
     taskList[nextTask].jobPriority = priority;
     taskList[nextTask].jobState = 0;
     msgHead[nextTask] = NULMSG;                   // Mark message queue as empty.
+    msgFree[nextTask] = 0;                        // Point free list to first msg node.
+    msgQinit(nextTask);                           // Initialize task message queue.
     return(nextTask++);                           // Return jobID & increment for next time.
   }
   return -1;                                      // Return - failed to start new task
@@ -187,61 +190,110 @@ int   taskGetState(int id){
   return(taskList[id].jobState);
 }
 
+
+/*
+ *  Initialize message queue
+ *    - Pre fill message queue with blank messages
+ *    - All linked together
+ */
+int msgQinit(int msgQ){
+  for(int node = 0; node < QUEDEPTH; node++){
+    msgQue[msgQ][node].msgSrc = 0;
+    msgQue[msgQ][node].msgPri = 0;               
+    if(node == QUEDEPTH-1){
+      msgQue[msgQ][node].msgNext = NULMSG;            // Last node so point next to nul.
+    } else {      
+      msgQue[msgQ][node].msgNext = node+1;            // Point next to next node.
+    }      
+  }  
+}
+
 /*
  *  Send message to Dest msgQ from source msgQ
- *    - save copies of current head of msg list and free list.
+ *    - Save copies of current head of msg list and free list.
  *    - Put new message in first free list node.
- *    - Insert into list based on priority
+ *    - Insert into list based on priority.
  */
-int msgSnd(int destid, int srcid, int pri, int typ, cmd_struct msg){
-  int nxtFree
-      = msgQue[destid][msgFree[destid]].msgNext;      // Point to second node in free list
-  int oldHead = msgHead[destid];                      // Temp save of current msgQue head
-  int tmpPtr = NULMSG;                                // Temp pointer to traverse list
-  int nxtPtr = NULMSG;                                // Temp pointer to traverse list
+int msgSnd(int destQ, int srcQ, int pri, int typ, cmd_struct msg){
+  int nxtFree = 0;                                        // Used to point at second free node.
+  int oldHead = msgHead[destQ];                           // Temp save of current msgQue head
+  int tmpMsg = NULMSG;                                    // Temp pointer to traverse list
+  int nxtMsg = NULMSG;                                    // Temp pointer to traverse list
+  int curMsg = NULMSG;
+  int prevMsg = NULMSG;
   
-  /*  if typ = IMMEAD and que not empty, fail. */
-  if((typ == IPC_IMMEAD) & (msgHead[destid] != NULMSG)){
-    return(IPC_QFAIL);
-  }
   
-  if(msgFree[destid] != NULMSG){                      // If message queue still has room
-    msgQue[destid][msgFree[destid]].msgSrc = srcid;
-    msgQue[destid][msgFree[destid]].msgPri = pri;
-    msgQue[destid][msgFree[destid]].msgBody.action = msg.action;
-    msgQue[destid][msgFree[destid]].msgBody.direction = msg.direction;
-    msgQue[destid][msgFree[destid]].msgBody.value1 = msg.value1;
-    msgQue[destid][msgFree[destid]].msgBody.value2 = msg.value2;
-    tmpPtr = msgFree[destid];                         // Temp pointer points at new node
-    msgFree[destid] = nxtFree;                        // Update head of free list
+  if(msgFree[destQ] != NULMSG){                           // If message queue still has room
+    nxtFree = msgQue[destQ][msgFree[destQ]].msgNext;      // Point to second node in free list
+    msgQue[destQ][msgFree[destQ]].msgSrc = srcQ;
+    msgQue[destQ][msgFree[destQ]].msgPri = pri;
+    msgQue[destQ][msgFree[destQ]].msgBody.action = msg.action;
+    msgQue[destQ][msgFree[destQ]].msgBody.direction = msg.direction;
+    msgQue[destQ][msgFree[destQ]].msgBody.value1 = msg.value1;
+    msgQue[destQ][msgFree[destQ]].msgBody.value2 = msg.value2;
+    tmpMsg = msgFree[destQ];                              // Temp pointer points at new node
+    msgFree[destQ] = nxtFree;                             // Update head of free list
   } else {
-    return(IPC_QFULL);                                // Queue was full couldn't add msg
+    return(IPC_QFULL);                                    // Queue was full couldn't add msg
   }    
   
-  if((msgHead[destid] == NULMSG) |                    // Message queue is empty or
-    (msgQue[destid][msgHead[destid]].msgPri < pri)){  //  first node has a lower priority.
-      oldHead = msgHead[destid];                      // Remember where Head is currently
-      msgHead[destid] = tmpPtr;                       // Point head at new message
-      msgQue[destid][tmpPtr].msgNext = oldHead;       // Point new msg.next at old head
-  } else {
-    while(msgQue[destid][oldHead].msgPri < pri){
-      if(msgQue[destid][oldHead].msgNext != NULMSG){
-        oldHead = msgQue[destid][oldHead].msgNext;    // Point to next message in queue.
+  /*
+   * If msgType IMMEAD and it's not the highest priority
+   * in the queue, then drop it and return status.
+   */
+  if((typ & IPC_IMMEAD) == IPC_IMMEAD){
+    if(msgHead[destQ] == NULMSG){                         // Message queue is curently empty.
+      msgHead[destQ] = tmpMsg;                            // Point Head at new message.
+      msgQue[destQ][tmpMsg].msgNext = NULMSG;             // Make new message end of list.
+      msgFlagChk(srcQ, typ);                              // See if source task needs to wait.
+      taskSetStatus(destQ, RUNABLE);
+      return(IPC_QSUCC);                                  // Success! we added the msg to the queue.
+    } else {
+      if(msgQue[destQ][msgHead[destQ]].msgPri >= pri){    // See if new message should be first item
+        msgQue[destQ][tmpMsg].msgNext = msgHead[destQ];   // If so, point head at new message.
+        msgHead[destQ] = tmpMsg;
+        msgFlagChk(srcQ, typ);                            // See if source task needs to wait.
+        taskSetStatus(destQ, RUNABLE);
+        return(IPC_QSUCC);                                // Success! we added the msg to the queue.
       } else {
-        break;                                        // Reached end of msq queue.
+        nxtFree = msgFree[destQ];                         // Save pointer to top of free list
+        msgFree[destQ] = tmpMsg;                          // New top of free is temp msg node
+        msgQue[destQ][msgFree[destQ]].msgNext = nxtFree;  // Point last msg node to old top of free.
+        return(IPC_QFAIL);                                // We failed to add the msg to the queue.
       }
     }
-    nxtPtr = msgQue[destid][oldHead].msgNext;         // Remember pointer to next msg
-    msgQue[destid][oldHead].msgNext = tmpPtr;         // Point current msq at new node
-    msgQue[destid][tmpPtr].msgNext = nxtPtr;          // Point new msg.next at next in queue
   }
-  return(IPC_QSUCC);                                  // Success! we added the msg to the queue.
+      
+  if((msgHead[destQ] == NULMSG) |                         // Message queue is empty or
+    (msgQue[destQ][msgHead[destQ]].msgPri >= pri)){       //  first node has a lower priority.
+      oldHead = msgHead[destQ];                           // Remember where Head is currently
+      msgHead[destQ] = tmpMsg;                            // Point head at new message
+      msgQue[destQ][tmpMsg].msgNext = oldHead;            // Point new msg.next at NULMSG
+  } else {
+    curMsg = msgHead[destQ];
+    prevMsg = msgHead[destQ];
+    while(msgQue[destQ][curMsg].msgPri < pri){
+      if(msgQue[destQ][curMsg].msgNext != NULMSG){
+        prevMsg = curMsg;
+        curMsg = msgQue[destQ][curMsg].msgNext;           // Point to next message in queue.
+      } else {
+        prevMsg = curMsg;
+        curMsg = NULMSG;    
+        break;
+      }
+    }
+    msgQue[destQ][tmpMsg].msgNext = curMsg;               // Point current msq at new node
+    msgQue[destQ][prevMsg].msgNext = tmpMsg;              // Point new msg.next at next in queue
+  }
+  msgFlagChk(srcQ, typ);                                  // See if source task needs to wait.
+  taskSetStatus(destQ, RUNABLE);
+  return(IPC_QSUCC);                                      // Success! we added the msg to the queue.
 }
 
 /*
  *  Receive message from msgid message Queue
  *    - Save pointer to second message node in list.
- *    - Pull out body of message to reeturn to task reading the mesage.
+ *    - Pull out body of message to return to task reading the message.
  *    - Save pointer to what was the top of the free nodes list.
  *    - Set top of free list to point to message node just read.
  *    - Make just read msg node point to old top of free list.
@@ -258,15 +310,15 @@ cmd_struct msgRcv(int msgid, int msgflg){
     return(msg);
   }
   
-  newHead = msgQue[msgid][msgHead[msgid]].msgNext;  // Save pointer to next msg node.
+  newHead = msgQue[msgid][msgHead[msgid]].msgNext;        // Save pointer to next msg node.
   msg.action = msgQue[msgid][msgHead[msgid]].msgBody.action;
   msg.direction = msgQue[msgid][msgHead[msgid]].msgBody.direction;
   msg.value1 = msgQue[msgid][msgHead[msgid]].msgBody.value1;
   msg.value2 = msgQue[msgid][msgHead[msgid]].msgBody.value2;
-  oldFree = msgFree[msgid];                         // Save pointer to top of free list
-  msgFree[msgid] = msgHead[msgid];                  // New top of free is last msg node
-  msgQue[msgid][msgFree[msgid]].msgNext = oldFree;  // Point last msg node to old top of free.
-  msgHead[msgid] = newHead;                         // Point msg head to next msg node.
+  oldFree = msgFree[msgid];                               // Save pointer to top of free list
+  msgFree[msgid] = msgHead[msgid];                        // New top of free is last msg node
+  msgQue[msgid][msgFree[msgid]].msgNext = oldFree;        // Point last msg node to old top of free.
+  msgHead[msgid] = newHead;                               // Point msg head to next msg node.
   return(msg);
 }
 
@@ -275,26 +327,47 @@ cmd_struct msgRcv(int msgid, int msgflg){
  *    - STAT  returns count of entries in list
  *    - CLEAR empties list of all messages
  */
-int msgCtl(int msgid, int msgcmd){
-  int tmp;
+int msgCtl(int msgQ, int msgcmd){
+  int node  = 0;
+  int count = 0;
   
   switch(msgcmd){
     case IPC_STAT:
-      if(msgHead[msgid] == NULMSG){
-        return(0);                                // No messages in queue.
+      if(msgHead[msgQ] == NULMSG){
+        return(count);                                    // No messages in queue.
       } else {
-        for(tmp = 0; tmp < QUEDEPTH; tmp++){      // Find end of list.
-          if(msgQue[msgid][tmp].msgNext == NULMSG){
-            return(++tmp);                        // Return message count.
+        node = msgHead[msgQ];
+        while(node != NULMSG){
+          count++;
+          if(msgQue[msgQ][node].msgNext == NULMSG){
+            return(count);                                // Return message count.
           }
+          node = msgQue[msgQ][node].msgNext;
         }                      
       }        
       break;
     case IPC_CLEAR:
-      msgHead[msgid] = NULMSG;
-      msgFree[msgid] = 0;
+      msgHead[msgQ] = NULMSG;                             // Point Head to NUL (Empty List)
+      msgFree[msgQ] = 0;                                  // Point Free to first node in array.
+      msgQinit(msgQ);                                     // Initialize task message queue.
+      break;
+    case IPC_NEXT:
+      return(msgQue[msgQ][msgHead[msgQ]].msgNext);
+      break;
+    case IPC_SRC:
+      return(msgQue[msgQ][msgHead[msgQ]].msgNext);
+      break;
+    case IPC_PRI:
+      return(msgQue[msgQ][msgHead[msgQ]].msgNext);
       break;
     default:
       break;
   }      
 }  
+
+int msgFlagChk(int srcMsg, int msgflg){
+  if((msgflg & IPC_WAIT) == IPC_WAIT){
+    taskSetStatus(srcMsg, HELD);
+  }    
+}
+
